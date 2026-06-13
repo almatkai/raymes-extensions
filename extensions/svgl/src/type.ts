@@ -24,8 +24,10 @@ export interface Category {
 }
 
 export type SvgActionKey =
+  | "copyImage"
   | "copySvg"
   | "copySvgFile"
+  | "downloadSvg"
   | "copySvgWordmark"
   | "copyShadcnRegistry"
   | "copyReactComponent"

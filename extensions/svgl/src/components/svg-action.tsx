@@ -5,11 +5,13 @@ import CopyVueComponentActions from "./actions/copy-vue-component-actions";
 import CopySvelteComponentActions from "./actions/copy-svelte-component-actions";
 import CopyAngularComponentActions from "./actions/copy-angular-component-actions";
 import CopyAstroComponentActions from "./actions/copy-astro-component-actions";
+import CopySvgImageActions from "./actions/copy-svg-image-actions";
 import CopySvgActions from "./actions/copy-svg-actions";
 import CopySvgFileActions from "./actions/copy-svg-file-actions";
 import CopyWordmarkSvgActions from "./actions/copy-wordmark-svg-actions";
 import CopySvgUrlActions from "./actions/copy-svg-url-actions";
 import CopyWordmarkSvgUrlAction from "./actions/copy-wordmark-svg-url-actions";
+import DownloadSvgActions from "./actions/download-svg-actions";
 import SvgInfoActions from "./actions/svg-info-actions";
 import { Svg, SvgActionKey } from "../type";
 import PinSvgAction from "./actions/pin-svg-action";
@@ -25,6 +27,11 @@ const SvgAction = ({ svg, category }: SvgActionProps) => {
   const { svgDefaultAction } = preferences;
 
   const actionSections: Record<SvgActionKey, JSX.Element> = {
+    copyImage: (
+      <ActionPanel.Section title="Copy Image" key="copyImage">
+        <CopySvgImageActions svg={svg} />
+      </ActionPanel.Section>
+    ),
     copySvg: (
       <ActionPanel.Section title="Copy SVG" key="copySvg">
         <CopySvgActions svg={svg} />
@@ -33,6 +40,11 @@ const SvgAction = ({ svg, category }: SvgActionProps) => {
     copySvgFile: (
       <ActionPanel.Section title="Copy SVG File" key="copySvgFile">
         <CopySvgFileActions svg={svg} />
+      </ActionPanel.Section>
+    ),
+    downloadSvg: (
+      <ActionPanel.Section title="Download SVG" key="downloadSvg">
+        <DownloadSvgActions svg={svg} />
       </ActionPanel.Section>
     ),
     copySvgWordmark: (
@@ -93,8 +105,8 @@ const SvgAction = ({ svg, category }: SvgActionProps) => {
   };
 
   const orderedKeys = Object.keys(actionSections) as SvgActionKey[];
-  const reorderedKeys: SvgActionKey[] = orderedKeys.includes(svgDefaultAction ?? "copySvg")
-    ? [svgDefaultAction ?? "copySvg", ...orderedKeys.filter((key) => key !== svgDefaultAction)]
+  const reorderedKeys: SvgActionKey[] = orderedKeys.includes(svgDefaultAction ?? "copyImage")
+    ? [svgDefaultAction ?? "copyImage", ...orderedKeys.filter((key) => key !== svgDefaultAction)]
     : orderedKeys;
 
   return <ActionPanel>{reorderedKeys.map((key) => actionSections[key])}</ActionPanel>;

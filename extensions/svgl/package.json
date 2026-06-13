@@ -26,8 +26,12 @@
           "description": "Default action for the SVG",
           "required": false,
           "type": "dropdown",
-          "defaultValue": "copySvg",
+          "defaultValue": "copyImage",
           "data": [
+            {
+              "value": "copyImage",
+              "title": "Copy as Image"
+            },
             {
               "value": "copySvg",
               "title": "Copy SVG"
@@ -35,6 +39,10 @@
             {
               "value": "copySvgFile",
               "title": "Copy SVG File"
+            },
+            {
+              "value": "downloadSvg",
+              "title": "Download SVG"
             },
             {
               "value": "copySvgWordmark",

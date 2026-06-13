@@ -1,4 +1,4 @@
-import { Clipboard, Toast, closeMainWindow, showHUD, showToast } from "@raycast/api";
+import { Clipboard, Toast, closeMainWindow, showHUD, showInFinder, showToast } from "@raycast/api";
 import fetch from "node-fetch";
 import { Category, Svg } from "../type";
 import { ONE_WEEK_MS, withCache } from "./cache";
@@ -15,6 +15,8 @@ export const OLD_API_URL = `${APP_URL}/api`;
 interface SvrgApiResponse {
   data: string;
 }
+
+const safeFileName = (name: string) => name.replace(/[/\\?%*:|"<>]/g, "-").trim() || "logo";
 
 export const fetchSvgs = async () => {
   return withCache("svgl_svgs", async () => {
@@ -107,7 +109,7 @@ export const fetchAndCopySvgFile = async (url: string, showContent: string, file
   try {
     const svg = await fetchSvg(url);
     await toast.hide();
-    const filePath = path.join(os.tmpdir(), `${fileName}.svg`);
+    const filePath = path.join(os.tmpdir(), `${safeFileName(fileName)}.svg`);
     writeFileSync(filePath, svg, "utf-8");
     Clipboard.copy({
       file: filePath,
@@ -125,6 +127,65 @@ export const fetchAndCopySvgFile = async (url: string, showContent: string, file
       await showToast({
         style: Toast.Style.Failure,
         title: "Failed to fetch svg",
+      });
+    }
+  }
+};
+
+export const fetchAndCopySvgImage = async (url: string, showContent: string, fileName: string) => {
+  const toast = await showToast({
+    style: Toast.Style.Animated,
+    title: "Fetching svg image",
+  });
+  try {
+    const svg = await fetchSvg(url);
+    await toast.hide();
+    const filePath = path.join(os.tmpdir(), `${safeFileName(fileName)}.svg`);
+    writeFileSync(filePath, svg, "utf-8");
+    Clipboard.copy({
+      file: filePath,
+    });
+    showHUD(showContent);
+    closeMainWindow();
+  } catch (error) {
+    if (error instanceof Error) {
+      await showToast({
+        style: Toast.Style.Failure,
+        title: "Failed to copy svg image",
+        message: error.message,
+      });
+    } else {
+      await showToast({
+        style: Toast.Style.Failure,
+        title: "Failed to copy svg image",
+      });
+    }
+  }
+};
+
+export const fetchAndDownloadSvg = async (url: string, showContent: string, fileName: string) => {
+  const toast = await showToast({
+    style: Toast.Style.Animated,
+    title: "Downloading svg file",
+  });
+  try {
+    const svg = await fetchSvg(url);
+    await toast.hide();
+    const filePath = path.join(os.homedir(), "Downloads", `${safeFileName(fileName)}.svg`);
+    writeFileSync(filePath, svg, "utf-8");
+    showHUD(showContent);
+    showInFinder(filePath);
+  } catch (error) {
+    if (error instanceof Error) {
+      await showToast({
+        style: Toast.Style.Failure,
+        title: "Failed to download svg",
+        message: error.message,
+      });
+    } else {
+      await showToast({
+        style: Toast.Style.Failure,
+        title: "Failed to download svg",
       });
     }
   }
