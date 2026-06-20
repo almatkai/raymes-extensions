@@ -1,11 +1,12 @@
-import { Clipboard, closeMainWindow, LaunchProps, popToRoot, showHUD } from "@raycast/api";
+import { Clipboard, closeMainWindow, Detail, LaunchProps, popToRoot, showHUD } from "@raycast/api";
 import { showFailureToast } from "@raycast/utils";
 import { callbackLaunchCommand, LaunchOptions } from "raycast-cross-extension";
 import { useEffect, useRef } from "react";
-import { ColorWheelPreview } from "./components/ColorWheelPreview";
 import { addToHistory } from "./lib/history";
 import { Color } from "./lib/types";
 import { getFormattedColor, isMac } from "./lib/utils";
+
+const COLOR_WHEEL_MARKDOWN = "![RGB Color Wheel](rgb-color-wheel.png)";
 
 export default function Command({
   launchContext = {},
@@ -69,5 +70,5 @@ export default function Command({
     pickAndHandleColor();
   }, []);
 
-  return <ColorWheelPreview />;
+  return <Detail markdown={COLOR_WHEEL_MARKDOWN} />;
 }
