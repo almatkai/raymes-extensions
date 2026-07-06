@@ -1,5 +1,15 @@
 # betterstack-utils Changelog
 
+## [Bugfix] - 2026-07-06
+
+- Fixed an issue where light themes were not displaying the schedule grid colors and borders properly.
+- Fixed the weekend rendering as a solid black block by replacing Satori's `repeating-linear-gradient`
+  output with a different SVG pattern.
+- Fixed on-call bars rendering with a black fill on Raycast v1 by rasterizing the schedule to PNG instead of embedding
+  raw SVG. Raycast v2 (beta) keeps the SVG rendering path, so the live pulse animation still works there.
+- Fixed inconsistent borders between week rows in the monthly schedule grid, caused by adjacent weeks drawing
+  overlapping or mismatched border segments at out-of-month day boundaries.
+
 ## [Schedule improvements] - 2026-06-30
 
 - Added a **Refresh** action to the on-call schedule.
