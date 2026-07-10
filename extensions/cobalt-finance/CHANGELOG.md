@@ -1,9 +1,9 @@
 # Cobalt Changelog
 
-## [Review Fixes] - 2026-06-11
+## [Merchant Logos] - 2026-07-10
 
-- Force re-auth when the access token is expired and no refresh token is available (or refresh fails)
-- Drop the shared Brandfetch client ID default; the field is now opt-in so users don't share the author's quota
+- Merchant, institution, and recurring-stream logos now work out of the box — no manual Brandfetch or logo.dev token required
+- Remove `brandfetchClientId` and `logoDevToken` preferences
 
 ## [API Sync] - 2026-06-11
 
