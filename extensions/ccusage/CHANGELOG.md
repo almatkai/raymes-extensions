@@ -1,5 +1,16 @@
 # Claude Code Usage (ccusage) Changelog
 
+## [Reconcile menu bar usage readouts] - 2026-07-10
+
+### Fixed
+
+- Rate-limit percentages now agree across surfaces. The menu bar title, the progress bars, and the command's Usage Limits accessory all follow one "Usage Display Mode" preference, which defaults to Consumed so they match Claude's own settings out of the box
+- The last-fetched time now persists across relaunches, so a fresh menu bar process reports the real age of its data in "Last Updated" and the stale-data warning instead of a blank timestamp
+
+### Changed
+
+- The former menu bar "Progress Bar Mode" preference is now an extension-level "Usage Display Mode" preference and defaults to Consumed. If you previously set it to Remaining, reselect it in the extension preferences
+
 ## [Honor server rate-limit backoff] - 2026-06-10
 
 ### Fixed
