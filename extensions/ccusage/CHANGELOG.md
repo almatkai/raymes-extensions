@@ -1,5 +1,11 @@
 # Claude Code Usage (ccusage) Changelog
 
+## [More progress bar styles] - 2026-07-12
+
+### Added
+
+- Six new progress bar styles — "Dots" (`●○`), "Segmented" (`▮▯`), "Squares" (`■□`), "Diamonds" (`◆◇`), "Stars" (`★☆`), and "Braille" (`⣿⣀`) — shape-based tracks that render consistently whether a menu row is idle or selected, unlike the Solid style's shade track; the default is unchanged
+
 ## [Keep rate-limit bars visible during backoff] - 2026-07-12
 
 ### Fixed
