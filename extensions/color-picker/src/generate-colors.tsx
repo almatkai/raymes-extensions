@@ -1,10 +1,13 @@
-import { AI, Action, ActionPanel, Grid, LaunchProps } from "@raycast/api";
+import { AI, Action, ActionPanel, Grid, Icon, Keyboard, LaunchProps, showToast } from "@raycast/api";
 import { showFailureToast, useAI } from "@raycast/utils";
+import { useEffect } from "react";
+import { ColorWheelPreview } from "./components/ColorWheelPreview";
 import CopyAsSubmenu from "./components/CopyAsSubmenu";
-import { addToHistory } from "./lib/history";
+import { addColorsToHistory, addToHistory, useHistory } from "./lib/history";
 import { getFormattedColor, getPreviewColor } from "./lib/utils";
 
 export default function GenerateColors(props: LaunchProps<{ arguments: Arguments.GenerateColors }>) {
+  const { addToFavorites, isFavorite, removeFromFavorites } = useHistory();
   const { data, isLoading } = useAI(
     `Generate colors based on a prompt.
 
@@ -32,12 +35,17 @@ JSON colors:`,
     showFailureToast(error, { title: "Could not generate colors, please try again." });
   }
 
+  useEffect(() => {
+    if (colors.length > 0) addColorsToHistory(colors);
+  }, [data]);
+
   return (
     <Grid columns={5} isLoading={isLoading}>
       {colors.map((c, index) => {
         const formattedColor = getFormattedColor(c);
         const previewColor = getPreviewColor(c);
         const color = { light: previewColor, dark: previewColor, adjustContrast: false };
+        const favorite = isFavorite(formattedColor);
         return (
           <Grid.Item
             key={index}
@@ -48,6 +56,25 @@ JSON colors:`,
                 <Action.CopyToClipboard content={formattedColor} onCopy={() => addToHistory(formattedColor)} />
                 <Action.Paste content={formattedColor} onPaste={() => addToHistory(formattedColor)} />
                 <CopyAsSubmenu color={formattedColor} onCopy={() => addToHistory(formattedColor)} />
+                <Action.Push
+                  title="Open in Color Wheel"
+                  icon={Icon.CircleProgress100}
+                  target={<ColorWheelPreview initialColor={formattedColor} />}
+                />
+                <Action
+                  title={favorite ? "Remove from Favorites" : "Add to Favorites"}
+                  icon={favorite ? Icon.StarDisabled : Icon.Star}
+                  shortcut={Keyboard.Shortcut.Common.Pin}
+                  onAction={async () => {
+                    if (favorite) {
+                      await removeFromFavorites(formattedColor);
+                      await showToast({ title: "Removed from favorites", message: formattedColor });
+                    } else {
+                      await addToFavorites(formattedColor);
+                      await showToast({ title: "Added to favorites", message: formattedColor });
+                    }
+                  }}
+                />
               </ActionPanel>
             }
           />

@@ -2,6 +2,7 @@ import { Action, ActionPanel, getSelectedFinderItems, Grid, Icon, showToast, Toa
 import { useEffect, useState } from "react";
 import { isMac } from "./lib/utils";
 import { fileManagerName } from "./lib/constants";
+import { addColorsToHistory } from "./lib/history";
 
 type FinalColor = {
   hex: string;
@@ -58,6 +59,7 @@ export default function Command() {
       try {
         const colors = await extractColor(path, 40, false); // Set dominantOnly to true
 
+        addColorsToHistory(colors.map((color) => color.hex));
         setColors(colors);
         toast.style = Toast.Style.Success;
         toast.title = "Colors extracted";

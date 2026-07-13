@@ -74,7 +74,7 @@ export default function Command() {
 }
 
 function Actions({ historyItem }: { historyItem: HistoryItem }) {
-  const { remove, clear, edit } = useHistory();
+  const { remove, clear, edit, addToFavorites, removeFromFavorites } = useHistory();
   const { data: frontmostApp } = usePromise(async () => {
     try {
       return await getFrontmostApplication();
@@ -113,6 +113,22 @@ function Actions({ historyItem }: { historyItem: HistoryItem }) {
           title="Edit Title"
           icon={Icon.Pencil}
           shortcut={Keyboard.Shortcut.Common.Edit}
+        />
+      </ActionPanel.Section>
+      <ActionPanel.Section title="Organize">
+        <Action
+          icon={historyItem.isFavorite ? Icon.StarDisabled : Icon.Star}
+          title={historyItem.isFavorite ? "Remove from Favorites" : "Add to Favorites"}
+          shortcut={Keyboard.Shortcut.Common.Pin}
+          onAction={async () => {
+            if (historyItem.isFavorite) {
+              await removeFromFavorites(historyItem.color);
+              await showToast({ title: "Removed from favorites" });
+            } else {
+              await addToFavorites(historyItem.color);
+              await showToast({ title: "Added to favorites" });
+            }
+          }}
         />
       </ActionPanel.Section>
       <ActionPanel.Section>
