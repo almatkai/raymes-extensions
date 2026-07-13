@@ -1,13 +1,14 @@
-import { AI, Action, ActionPanel, Grid, Icon, Keyboard, LaunchProps, showToast } from "@raycast/api";
+import { AI, Action, ActionPanel, Grid, Icon, Keyboard, LaunchProps, List, showToast } from "@raycast/api";
 import { showFailureToast, useAI } from "@raycast/utils";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ColorWheelPreview } from "./components/ColorWheelPreview";
 import CopyAsSubmenu from "./components/CopyAsSubmenu";
+import { useColorsSelection } from "./hooks/useColorsSelection";
 import { addColorsToHistory, addToHistory, useHistory } from "./lib/history";
-import { getFormattedColor, getPreviewColor } from "./lib/utils";
+import { SelectMode, UseColorsSelectionObject } from "./lib/types";
+import { COPY_FORMATS, copySelectedColors, getFormattedColor, getIcon, getPreviewColor } from "./lib/utils";
 
 export default function GenerateColors(props: LaunchProps<{ arguments: Arguments.GenerateColors }>) {
-  const { addToFavorites, isFavorite, removeFromFavorites } = useHistory();
   const { data, isLoading } = useAI(
     `Generate colors based on a prompt.
 
@@ -28,6 +29,8 @@ JSON colors:`,
     },
   );
 
+  const [selectMode, setSelectMode] = useState<SelectMode>("single");
+
   let colors: string[] = [];
   try {
     colors = data ? (JSON.parse(data) as string[]) : [];
@@ -39,13 +42,57 @@ JSON colors:`,
     if (colors.length > 0) addColorsToHistory(colors);
   }, [data]);
 
+  const { selection } = useColorsSelection<string>(colors);
+
+  if (selectMode === "multi") {
+    return (
+      <List
+        isLoading={isLoading}
+        searchBarAccessory={
+          <List.Dropdown
+            tooltip="Switch Select Mode"
+            value={selectMode}
+            onChange={(v) => setSelectMode(v as SelectMode)}
+          >
+            <List.Dropdown.Item title="Single-Select Mode" value="single" />
+            <List.Dropdown.Item title="Multi-Select Mode" value="multi" />
+          </List.Dropdown>
+        }
+      >
+        {colors.map((c, index) => {
+          const formattedColor = getFormattedColor(c);
+          const previewColor = getPreviewColor(c);
+          const isSelected = selection.helpers.getIsItemSelected(c);
+
+          return (
+            <List.Item
+              key={index}
+              icon={getIcon(previewColor)}
+              title={`${isSelected ? "✓ " : ""}${formattedColor}`}
+              actions={<MultiActions color={c} formattedColor={formattedColor} selection={selection} />}
+            />
+          );
+        })}
+      </List>
+    );
+  }
+
   return (
-    <Grid columns={5} isLoading={isLoading}>
+    <Grid
+      columns={5}
+      isLoading={isLoading}
+      searchBarAccessory={
+        <Grid.Dropdown tooltip="Switch Select Mode" value={selectMode} onChange={(v) => setSelectMode(v as SelectMode)}>
+          <Grid.Dropdown.Item title="Single-Select Mode" value="single" />
+          <Grid.Dropdown.Item title="Multi-Select Mode" value="multi" />
+        </Grid.Dropdown>
+      }
+    >
       {colors.map((c, index) => {
         const formattedColor = getFormattedColor(c);
         const previewColor = getPreviewColor(c);
         const color = { light: previewColor, dark: previewColor, adjustContrast: false };
-        const favorite = isFavorite(formattedColor);
+
         return (
           <Grid.Item
             key={index}
@@ -53,33 +100,110 @@ JSON colors:`,
             title={formattedColor}
             actions={
               <ActionPanel>
-                <Action.CopyToClipboard content={formattedColor} onCopy={() => addToHistory(formattedColor)} />
-                <Action.Paste content={formattedColor} onPaste={() => addToHistory(formattedColor)} />
-                <CopyAsSubmenu color={formattedColor} onCopy={() => addToHistory(formattedColor)} />
-                <Action.Push
-                  title="Open in Color Wheel"
-                  icon={Icon.CircleProgress100}
-                  target={<ColorWheelPreview initialColor={formattedColor} />}
-                />
-                <Action
-                  title={favorite ? "Remove from Favorites" : "Add to Favorites"}
-                  icon={favorite ? Icon.StarDisabled : Icon.Star}
-                  shortcut={Keyboard.Shortcut.Common.Pin}
-                  onAction={async () => {
-                    if (favorite) {
-                      await removeFromFavorites(formattedColor);
-                      await showToast({ title: "Removed from favorites", message: formattedColor });
-                    } else {
-                      await addToFavorites(formattedColor);
-                      await showToast({ title: "Added to favorites", message: formattedColor });
-                    }
-                  }}
-                />
+                <PaletteActions formattedColor={formattedColor} />
               </ActionPanel>
             }
           />
         );
       })}
     </Grid>
+  );
+}
+
+type MultiActionsProps = {
+  color: string;
+  formattedColor: string;
+  selection: UseColorsSelectionObject<string>;
+};
+
+function MultiActions({ color, formattedColor, selection }: MultiActionsProps) {
+  const { toggleSelection, selectAll, clearSelection } = selection.actions;
+  const { anySelected, allSelected, selectedItems, countSelected } = selection.selected;
+  const isSelected = selection.helpers.getIsItemSelected(color);
+
+  return (
+    <ActionPanel>
+      <ActionPanel.Section>
+        <PaletteActions formattedColor={formattedColor} />
+      </ActionPanel.Section>
+
+      <ActionPanel.Section title="Multiple Colors">
+        {countSelected > 0 && (
+          <ActionPanel.Submenu
+            title="Copy Selected Colors"
+            icon={Icon.CopyClipboard}
+            shortcut={{ modifiers: ["cmd", "shift"], key: "enter" }}
+          >
+            <Action.CopyToClipboard
+              title="Copy to Clipboard"
+              content={selectedItems.map((item) => getFormattedColor(item)).join(";")}
+              onCopy={() => selectedItems.forEach((item) => addToHistory(item))}
+            />
+            {COPY_FORMATS.map(({ format, title, icon }) => (
+              <Action.CopyToClipboard
+                key={format}
+                title={title}
+                content={copySelectedColors(selectedItems, format)}
+                icon={icon}
+              />
+            ))}
+          </ActionPanel.Submenu>
+        )}
+        <Action
+          icon={isSelected ? Icon.Checkmark : Icon.Circle}
+          title={isSelected ? `Deselect Color ${formattedColor}` : `Select Color ${formattedColor}`}
+          shortcut={{ modifiers: ["cmd"], key: "s" }}
+          onAction={() => toggleSelection(color)}
+        />
+        {!allSelected && (
+          <Action
+            icon={Icon.Checkmark}
+            title="Select All Colors"
+            shortcut={{ modifiers: ["cmd", "shift"], key: "a" }}
+            onAction={selectAll}
+          />
+        )}
+        {anySelected && (
+          <Action
+            icon={Icon.XMarkCircle}
+            title="Clear Selection"
+            shortcut={{ modifiers: ["cmd", "shift"], key: "z" }}
+            onAction={clearSelection}
+          />
+        )}
+      </ActionPanel.Section>
+    </ActionPanel>
+  );
+}
+
+function PaletteActions({ formattedColor }: { formattedColor: string }) {
+  const { addToFavorites, removeFromFavorites, history } = useHistory();
+  const favorite = history.some((item) => item.isFavorite && getFormattedColor(item.color) === formattedColor);
+
+  return (
+    <>
+      <Action.CopyToClipboard content={formattedColor} onCopy={() => addToHistory(formattedColor)} />
+      <Action.Paste content={formattedColor} onPaste={() => addToHistory(formattedColor)} />
+      <CopyAsSubmenu color={formattedColor} onCopy={() => addToHistory(formattedColor)} />
+      <Action.Push
+        title="Open in Color Wheel"
+        icon={Icon.CircleProgress100}
+        target={<ColorWheelPreview initialColor={formattedColor} />}
+      />
+      <Action
+        title={favorite ? "Remove from Favorites" : "Add to Favorites"}
+        icon={favorite ? Icon.StarDisabled : Icon.Star}
+        shortcut={Keyboard.Shortcut.Common.Pin}
+        onAction={async () => {
+          if (favorite) {
+            await removeFromFavorites(formattedColor);
+            await showToast({ title: "Removed from favorites", message: formattedColor });
+          } else {
+            await addToFavorites(formattedColor);
+            await showToast({ title: "Added to favorites", message: formattedColor });
+          }
+        }}
+      />
+    </>
   );
 }

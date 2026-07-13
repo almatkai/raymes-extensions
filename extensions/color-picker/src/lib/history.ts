@@ -7,15 +7,14 @@ const MAX_HISTORY_LENGTH = 200;
 
 export function useHistory() {
   const [history, setHistory] = useCachedState<HistoryItem[]>("history", []);
-
-  const update = (color: HistoryColor, updater: (item: HistoryItem) => HistoryItem) =>
+  const update = (color: HistoryColor, updateItem: (item: HistoryItem) => HistoryItem) =>
     setHistory((previousHistory) => {
       const colorKey = getFormattedColor(color);
       const existing = previousHistory.find((item) => getFormattedColor(item.color) === colorKey);
       if (!existing) {
-        return [updater({ date: new Date().toISOString(), color }), ...previousHistory];
+        return [updateItem({ date: new Date().toISOString(), color }), ...previousHistory];
       }
-      return previousHistory.map((item) => (getFormattedColor(item.color) === colorKey ? updater(item) : item));
+      return previousHistory.map((item) => (getFormattedColor(item.color) === colorKey ? updateItem(item) : item));
     });
 
   return {
@@ -32,10 +31,36 @@ export function useHistory() {
       }),
     addToFavorites: (color: HistoryColor) => update(color, (item) => ({ ...item, isFavorite: true })),
     removeFromFavorites: (color: HistoryColor) => update(color, (item) => ({ ...item, isFavorite: false })),
-    isFavorite: (color: HistoryColor) => {
-      const colorKey = getFormattedColor(color);
-      return history.some((item) => item.isFavorite && getFormattedColor(item.color) === colorKey);
-    },
+    moveFavorite: (color: HistoryColor, direction: "up" | "down") =>
+      setHistory((previousHistory) => {
+        const colorKey = getFormattedColor(color);
+        const currentIndex = previousHistory.findIndex(
+          (item) => item.isFavorite && getFormattedColor(item.color) === colorKey,
+        );
+
+        if (currentIndex === -1) {
+          return previousHistory;
+        }
+
+        const favoriteIndexes = previousHistory.reduce<number[]>((indexes, item, index) => {
+          if (item.isFavorite) {
+            indexes.push(index);
+          }
+
+          return indexes;
+        }, []);
+        const favoriteIndex = favoriteIndexes.indexOf(currentIndex);
+        const targetFavoriteIndex = favoriteIndex + (direction === "up" ? -1 : 1);
+        const targetIndex = favoriteIndexes[targetFavoriteIndex];
+
+        if (targetIndex === undefined) {
+          return previousHistory;
+        }
+
+        const nextHistory = [...previousHistory];
+        [nextHistory[currentIndex], nextHistory[targetIndex]] = [nextHistory[targetIndex], nextHistory[currentIndex]];
+        return nextHistory;
+      }),
     clear: () => setHistory([]),
   };
 }
@@ -50,7 +75,6 @@ export function addColorsToHistory(colors: HistoryColor[]) {
 
   const serializedHistory = cache.get("history");
   const previousHistory = serializedHistory ? (JSON.parse(serializedHistory) as HistoryItem[]) : [];
-
   const uniqueColors = colors.filter(
     (color, index) =>
       colors.findIndex((candidate) => getFormattedColor(candidate) === getFormattedColor(color)) === index,
@@ -71,13 +95,15 @@ export function addColorsToHistory(colors: HistoryColor[]) {
   const refreshedFavorites = previousHistory
     .filter((item) => item.isFavorite || !colorKeys.has(getFormattedColor(item.color)))
     .map((item) => (item.isFavorite ? (newItemsByColor.get(getFormattedColor(item.color)) ?? item) : item));
-  const regularNewItems = newItems.filter((item) => !item.isFavorite);
-  const history = [...regularNewItems, ...refreshedFavorites];
+  const history = [...newItems.filter((item) => !item.isFavorite), ...refreshedFavorites];
   const persistentItemsCount = history.filter((item) => item.isFavorite).length;
   const maxRegularHistoryLength = Math.max(MAX_HISTORY_LENGTH - persistentItemsCount, 0);
   let regularHistoryCount = 0;
   const newHistory = history.filter((item) => {
-    if (item.isFavorite) return true;
+    if (item.isFavorite) {
+      return true;
+    }
+
     regularHistoryCount += 1;
     return regularHistoryCount <= maxRegularHistoryLength;
   });
