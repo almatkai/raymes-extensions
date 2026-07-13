@@ -1,6 +1,7 @@
 import { Action, ActionPanel, Icon, List } from "@raycast/api";
 import { Color } from "color-namer";
 import { normalizeColorHex } from "../lib/utils";
+import { addToHistory } from "../lib/history";
 
 export const ColorNameListItem = ({ color }: { color: Color }) => {
   // Some palettes return hex codes without the hash symbol
@@ -28,7 +29,7 @@ export const ColorNameListItem = ({ color }: { color: Color }) => {
       actions={
         <ActionPanel>
           <Action.CopyToClipboard content={color.name} title="Copy Name" />
-          <Action.CopyToClipboard content={color.hex} title="Copy Hex" />
+          <Action.CopyToClipboard content={color.hex} title="Copy Hex" onCopy={() => addToHistory(hexCode)} />
         </ActionPanel>
       }
     />

@@ -1,6 +1,7 @@
 import { Action, ActionPanel, List, showToast, Toast, Clipboard, showHUD, popToRoot, LocalStorage } from "@raycast/api";
 import { getFormattedColor } from "../lib/utils";
 import { ColorFormatType } from "../lib/types";
+import { addToHistory } from "../lib/history";
 
 type ColorFormatProps = {
   text: string;
@@ -36,6 +37,7 @@ export const ColorConvertListItem = ({ text, title, value }: ColorFormatProps) =
             onAction={async () => {
               if (convertedColor) {
                 await Clipboard.copy(convertedColor);
+                addToHistory(text);
                 await showHUD("Copied color to clipboard");
               }
               LocalStorage.setItem("lastConvertedColorFormat", value);
