@@ -1,5 +1,11 @@
 # Agent Usage Changelog
 
+## [Fix Codex Plus plan parse error] - 2026-07-13
+
+### Bug Fixes
+
+- Fix Codex `parse_error` on Plus plan: tolerate `rate_limit.secondary_window: null` by detecting 5h vs weekly windows via `limit_window_seconds`, make `fiveHourLimit` / `weeklyLimit` optional, and skip the missing section in the detail view
+
 ## [Amp Free percent usage] - 2026-07-12
 
 ### Improvements
